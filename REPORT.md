@@ -1,4 +1,4 @@
-# Report — ResNet18 on CIFAR-10
+# Report - ResNet18 on CIFAR-10
 
 ## Environment
 
@@ -20,20 +20,21 @@
 | 3 | 224×224 | No | 0.0001 | 95.5% | 7 | 12/15 | 779s | 5743 MB | 94% |
 | 3b (repro) | 224×224 | No | 0.0001 | 95.5% | 10 | 12/15 | 772s | 5947 MB* | 95% |
 
+* Measured VRAM: Total GPU memory reported by `nvidia-smi`
 ---
 
 ## Run Notes
 
-### Run 1 — Wrong input size
+### Run 1 - Wrong input size
 Input resized to 32×32 before feeding a ResNet18 pretrained on ImageNet (expected 224×224). The backbone cannot extract meaningful features at that resolution, leading to unusable representations and low accuracy (41.3%). No overfitting observed.
 
-### Run 2 — Frozen backbone, correct input size
+### Run 2 - Frozen backbone, correct input size
 Input correctly resized to 224×224. Backbone frozen, only the classifier head is trained. Good convergence: both train and test loss decrease steadily, reaching ~0.6. Accuracy reaches **80.5%**. No overfitting. ~26s per epoch. VRAM usage increases due to larger input size, but remains manageable.
 
-### Run 3 — Full fine-tuning (backbone unfrozen)
-Backbone unfrozen with a lower LR (0.0001). Strong convergence early on, but **overfitting starts around epoch 7–8** — train loss keeps dropping to ~0.03 while test loss stops improving and oscillates between ~0.15 and ~0.18. Accuracy reaches **~95.5%** at epoch 7, then plateaus (oscillating between ~94.9% and 95.5%) rather than clearly degrading. ~64s per epoch due to full backprop through the backbone. VRAM usage is significantly higher due to full fine-tuning.
+### Run 3 - Full fine-tuning (backbone unfrozen)
+Backbone unfrozen with a lower LR (0.0001). Strong convergence early on, but **overfitting starts around epoch 7–8** - train loss keeps dropping to ~0.03 while test loss stops improving and oscillates between ~0.15 and ~0.18. Accuracy reaches **~95.5%** at epoch 7, then plateaus (oscillating between ~94.9% and 95.5%) rather than clearly degrading. ~64s per epoch due to full backprop through the backbone. VRAM usage is significantly higher due to full fine-tuning.
 
-### Run 3b — Reproduction of run 3
+### Run 3b - Reproduction of run 3
 Same config as run 3 (same `config.yaml`, seed 42), re-run to check reproducibility.
 
 | Epoch | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 |
@@ -49,5 +50,5 @@ Same config as run 3 (same `config.yaml`, seed 42), re-run to check reproducibil
 # Limitations & Improvements
 - Progressively fine tuning : start with frozen backbone and adjust gradually some parameters like the lr, the number of epochs, the batch size (to reduce VRAM usage but it will increase training time), and the number of layers to unfreeze.
 - More data augmentation to reduce overfitting.
-- Full determinism: set `torch.backends.cudnn.deterministic = True` / `benchmark = False` and seed the DataLoader workers (`worker_init_fn` + `generator`) to get bit-exact reruns.
+- Full determinism: set `torch.backends.cudnn.deterministic = True` and seed the DataLoader workers (`generator`) to get bit-exact reruns.
 - Save the best-epoch checkpoint instead of the last one: the saved model is the epoch-12 one, not the best-accuracy one.
